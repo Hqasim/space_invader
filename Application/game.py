@@ -20,15 +20,6 @@ screen = pygame.display.set_mode((display_width, display_height))
 pygame.display.set_caption("Space Invaders")
 clock = pygame.time.Clock()
 
-# Player Ship
-player_ship_pos_x = (display_width * 0.45)
-player_ship_pos_y = (display_height * 0.8)
-player_ship_image = pygame.image.load('../Assets/playerShip1_red.png')
-
-
-def player_ship(x, y):
-    screen.blit(player_ship_image, (round(x), round(y)))
-
 
 class Button:
     def __init__(self, color, x, y, width, height, text=''):
@@ -93,22 +84,51 @@ def game_menu():
 
 
 def game_active():
+    # Player Ship
+    ship_pos_x = (display_width * 0.45)
+    ship_pos_y = (display_height * 0.875)
+    ship_image = pygame.image.load('../Assets/playerShip1_red.png')
+
+    def player_ship(x, y):
+        screen.blit(ship_image, (round(x), round(y)))
+
+    x_step = 0  # Move step distance of space ship
+
+    # Game Loop
     while True:
-        # set background color
-        screen.fill(black)
-
-        # draw player ship
-        player_ship(player_ship_pos_x, player_ship_pos_y)
-
-        # process events
+        # Event Handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    if ship_pos_x > 0:
+                        x_step = -5
+                if event.key == pygame.K_RIGHT:
+                    if ship_pos_x < (display_width-99):
+                        x_step = 5
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_LEFT:
+                    x_step = 0
+                if event.key == pygame.K_RIGHT:
+                    x_step = 0
 
+        # set background color
+        screen.fill(black)
+
+        # draw player ship
+        ship_pos_x += x_step  # moving the ship coordinate
+        player_ship(ship_pos_x, ship_pos_y)
+
+        # Boundary Detection
+        if ship_pos_x < 0 or ship_pos_x > (display_width - 99):
+            # ship image is 99 pixels wide and 75 pixels tall
+            x_step = 0
         # screen refresh/update and performance
+
         pygame.display.update()
-        frames_per_second = 45
+        frames_per_second = 75
         clock.tick(frames_per_second)
 
 
