@@ -79,10 +79,12 @@ def game_menu():
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if play_button.mouse_over(pygame.mouse.get_pos()):
-                    print("Play")
-                    game_active()
+                    if event.button == 1:  # ensures left mouse click only
+                        print("Play")
+                        game_active()
                 if leaderboards_button.mouse_over(pygame.mouse.get_pos()):
-                    print("Leaderboards")
+                    if event.button == 1:  # ensures left mouse click only
+                        print("Leaderboards")
 
         # screen refresh/update and performance
         pygame.display.update()
