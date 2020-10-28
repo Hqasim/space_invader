@@ -1,24 +1,65 @@
-import pygame, os, sys
+import pygame
+import os
+import sys
+pygame.font.init()
 
 pygame.init()
-os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (690, 50)  # Game window position
+os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (450, 50)  # Game window position
 
-# Game State
+# Game Variables
 game_state = 1
+score = 0
+lives = 3
+
+# Game Constants
+DISPLAY_WIDTH, DISPLAY_HEIGHT = 600, 750
+FRAMES_PER_SECOND = 75
+MAIN_FONT = pygame.font.SysFont("comicsans", 40)
+PLAYER_SHIP_VELOCITY = 5
+
 
 # Color definition
-white = (255, 255, 255)
-black = (0, 0, 0)
-green = (0, 255, 0)
-blue = (0, 0, 128)
-red = (255, 0, 0)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+WHITE = (255, 255, 255)
 
 # Screen Setup
-display_width = 540  # 9:16 Screen aspect ratio
-display_height = 960
-screen = pygame.display.set_mode((display_width, display_height))
+screen = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
 pygame.display.set_caption("Space Invaders")
 clock = pygame.time.Clock()
+
+# Load Enemies Ship Images
+BLACK_ENEMY = pygame.image.load('../Assets/enemyBlack1.png')
+BLUE_ENEMY = pygame.image.load('../Assets/enemyBlue2.png')
+GREEN_ENEMY = pygame.image.load('../Assets/enemyGreen4.png')
+RED_ENEMY = pygame.image.load('../Assets/enemyRed5.png')
+
+# Load Player Ship Image
+PLAYER_SHIP = pygame.image.load('../Assets/playerShip1_red.png')
+
+# Load Laser Images
+BLUE_LASER = pygame.image.load('../Assets/pixel_laser_blue.png')  # Player laser color
+RED_LASER = pygame.image.load('../Assets/pixel_laser_red.png')  # Enemies laser color
+
+# Load Background Image
+BACKGROUND = pygame.image.load('../Assets/background_black.png')
+
+# Game functions
+
+
+def redraw_window():
+    # Draws the screen with the background
+    screen.blit(BACKGROUND, (0, 0))
+
+
+def redraw_score_lives():
+    # Draws the screen with score and lives
+    score_label = MAIN_FONT.render(f"Score: {score}", 1, WHITE)
+    lives_label = MAIN_FONT.render(f"Lives: {lives}", 1, WHITE)
+    screen.blit(score_label, ((DISPLAY_WIDTH - score_label.get_width() - 10), 10))
+    screen.blit(lives_label, (10, 10))
+
+# Game Classes
 
 
 class Button:
@@ -49,14 +90,30 @@ class Button:
         return False
 
 
+class Ship:
+    def __init__(self, x, y, health=100):
+        self.x = int(x)
+        self.y = int(y)
+        self.health = health
+        self.ship_img = None
+        self.laser_img = None
+        self.lasers = []
+        self.fire_cool_down = 0
+
+    def draw(self, window):
+        window.blit(PLAYER_SHIP, (self.x, self.y))
+
+# Game menu functions
+
+
 def game_menu():
     # Buttons
-    play_button = Button(red, 100, 350, 350, 100, "Play")
-    leaderboards_button = Button(red, 100, 550, 350, 100, "Leaderboards")
+    play_button = Button(RED, 100, 350, 350, 100, "Play")
+    leaderboards_button = Button(RED, 100, 550, 350, 100, "Leaderboards")
 
     while True:
-        # set background color
-        screen.fill(black)
+        # Set background
+        redraw_window()
 
         # Buttons draw
         play_button.draw(screen)
@@ -85,51 +142,38 @@ def game_menu():
 
 def game_active():
     # Player Ship
-    ship_pos_x = (display_width * 0.45)
-    ship_pos_y = (display_height * 0.875)
-    ship_image = pygame.image.load('../Assets/playerShip1_red.png')
-
-    def player_ship(x, y):
-        screen.blit(ship_image, (round(x), round(y)))
-
-    x_step = 0  # Move step distance of space ship
+    ship = Ship((DISPLAY_WIDTH/2) - 30, DISPLAY_HEIGHT - 85)
 
     # Game Loop
     while True:
-        # Event Handling
+        # Screen Performance
+        clock.tick(FRAMES_PER_SECOND)
+
+        # Set window
+        redraw_window()
+        redraw_score_lives()
+
+        # Draw Player Ship
+        ship.draw(screen)
+
+        # Window Closing
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    if ship_pos_x > 0:
-                        x_step = -5
-                if event.key == pygame.K_RIGHT:
-                    if ship_pos_x < (display_width-99):
-                        x_step = 5
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_LEFT:
-                    x_step = 0
-                if event.key == pygame.K_RIGHT:
-                    x_step = 0
 
-        # set background color
-        screen.fill(black)
-
-        # draw player ship
-        ship_pos_x += x_step  # moving the ship coordinate
-        player_ship(ship_pos_x, ship_pos_y)
-
-        # Boundary Detection
-        if ship_pos_x < 0 or ship_pos_x > (display_width - 99):
-            # ship image is 99 pixels wide and 75 pixels tall
-            x_step = 0
-        # screen refresh/update and performance
+        # Key Input Event Handling
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT]:  # Left arrow key
+            ship.x -= PLAYER_SHIP_VELOCITY
+        if keys[pygame.K_RIGHT]:  # Right arrow key
+            ship.x += PLAYER_SHIP_VELOCITY
+        if keys[pygame.K_UP]:  # Up arrow key
+            ship.y -= PLAYER_SHIP_VELOCITY
+        if keys[pygame.K_DOWN]:  # Down arrow key
+            ship.y += PLAYER_SHIP_VELOCITY
 
         pygame.display.update()
-        frames_per_second = 75
-        clock.tick(frames_per_second)
 
 
 def game_paused():
@@ -142,6 +186,5 @@ def game_end():
 
 def game_leaderboards():
     pass
-
 
 game_menu()
