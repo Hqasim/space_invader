@@ -1,22 +1,21 @@
 import pygame
 import os
 import sys
+import random
 pygame.font.init()
 
 pygame.init()
 os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (450, 50)  # Game window position
 
-# Game Variables
+# System Variables
 game_state = 1
-score = 0
-lives = 3
 
 # Game Constants
 DISPLAY_WIDTH, DISPLAY_HEIGHT = 600, 750
 FRAMES_PER_SECOND = 75
-MAIN_FONT = pygame.font.SysFont("comicsans", 40)
+MAIN_FONT = pygame.font.SysFont("comicsans", 35)
 PLAYER_SHIP_VELOCITY = 5
-
+PLAYER_MAX_Y = 30  # keeps ship off score and lives text
 
 # Color definition
 BLACK = (0, 0, 0)
@@ -32,7 +31,7 @@ clock = pygame.time.Clock()
 BLACK_ENEMY = pygame.image.load('../Assets/enemyBlack1.png')
 BLUE_ENEMY = pygame.image.load('../Assets/enemyBlue2.png')
 GREEN_ENEMY = pygame.image.load('../Assets/enemyGreen4.png')
-RED_ENEMY = pygame.image.load('../Assets/enemyRed5.png')
+ORANGE_ENEMY = pygame.image.load('../Assets/enemyRed5.png')
 
 # Load Player Ship Image
 PLAYER_SHIP = pygame.image.load('../Assets/playerShip1_red.png')
@@ -44,20 +43,6 @@ RED_LASER = pygame.image.load('../Assets/pixel_laser_red.png')  # Enemies laser 
 # Load Background Image
 BACKGROUND = pygame.image.load('../Assets/background_black.png')
 
-# Game functions
-
-
-def redraw_window():
-    # Draws the screen with the background
-    screen.blit(BACKGROUND, (0, 0))
-
-
-def redraw_score_lives():
-    # Draws the screen with score and lives
-    score_label = MAIN_FONT.render(f"Score: {score}", 1, WHITE)
-    lives_label = MAIN_FONT.render(f"Lives: {lives}", 1, WHITE)
-    screen.blit(score_label, ((DISPLAY_WIDTH - score_label.get_width() - 10), 10))
-    screen.blit(lives_label, (10, 10))
 
 # Game Classes
 
@@ -101,7 +86,39 @@ class Ship:
         self.fire_cool_down = 0
 
     def draw(self, window):
-        window.blit(PLAYER_SHIP, (self.x, self.y))
+        window.blit(self.ship_img, (self.x, self.y))
+
+    def get_width(self):
+        return self.ship_img.get_width()
+
+    def get_height(self):
+        return self.ship_img.get_height()
+
+
+class Player(Ship):
+    def __init__(self, x, y, health=100):
+        super().__init__(x, y, health)
+        self.ship_img = PLAYER_SHIP
+        self.laser_img = BLUE_LASER
+        self.mask = pygame.mask.from_surface(self.ship_img)  # for accurate collision
+
+
+class Enemy(Ship):
+    COLOR_MAP = {
+        "black": (BLACK_ENEMY, RED_LASER),
+        "blue": (BLUE_ENEMY, RED_LASER),
+        "green": (GREEN_ENEMY, RED_LASER),
+        "orange": (ORANGE_ENEMY, RED_LASER),
+    }
+
+    def __init__(self, x, y, color, health=100):
+        super().__init__(x, y, health)
+        self.ship_img, self.laser_img = self.COLOR_MAP[color]
+        self.mask = pygame.mask.from_surface(self.ship_img)  # for accurate collision
+
+    def move(self, vel):
+        self.y += vel
+
 
 # Game menu functions
 
@@ -113,7 +130,7 @@ def game_menu():
 
     while True:
         # Set background
-        redraw_window()
+        screen.blit(BACKGROUND, (0, 0))
 
         # Buttons draw
         play_button.draw(screen)
@@ -141,8 +158,32 @@ def game_menu():
 
 
 def game_active():
+    # Game Parameters
+    level = 0
+    score = 0
+    lives = 3
+    enemies = []
+    wave_length = 5
+    enemies_vel = 1
+
+    # Game Methods
+    def redraw_window():
+        # Draws the screen with the background
+        screen.blit(BACKGROUND, (0, 0))
+
+    def redraw_score_lives_level():
+        # Draws the screen with score and lives
+        score_label = MAIN_FONT.render(f"Score: {score}", 1, WHITE)
+        lives_label = MAIN_FONT.render(f"Lives: {lives}", 1, WHITE)
+        level_label = MAIN_FONT.render(f"Level: {level}", 1, WHITE)
+        screen.blit(score_label, ((DISPLAY_WIDTH - score_label.get_width() - 10), 10))
+        screen.blit(lives_label, (10, 10))
+        screen.blit(level_label, (int(DISPLAY_WIDTH / 2) - 50, 10))
+
     # Player Ship
-    ship = Ship((DISPLAY_WIDTH/2) - 30, DISPLAY_HEIGHT - 85)
+    player_ship = Player((DISPLAY_WIDTH/2) - 30, DISPLAY_HEIGHT - 80)
+
+
 
     # Game Loop
     while True:
@@ -151,10 +192,21 @@ def game_active():
 
         # Set window
         redraw_window()
-        redraw_score_lives()
+        redraw_score_lives_level()
+
+        # Spawning enemies
+        if len(enemies) == 0:
+            level += 1
+            wave_length += 5
+            for i in range(wave_length):
+                enemy = Enemy(random.randrange(50, DISPLAY_WIDTH - 100), random.randrange(-1500, -100),
+                              random.choice(["black", "blue", "green", "orange"]))
+                enemies.append(enemy)
+        for enemy in enemies:  # Moving enemies down
+            enemy.draw(screen)
 
         # Draw Player Ship
-        ship.draw(screen)
+        player_ship.draw(screen)
 
         # Window Closing
         for event in pygame.event.get():
@@ -162,16 +214,24 @@ def game_active():
                 pygame.quit()
                 sys.exit()
 
-        # Key Input Event Handling
+        # Key Input Event Handling and collision detection
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:  # Left arrow key
-            ship.x -= PLAYER_SHIP_VELOCITY
-        if keys[pygame.K_RIGHT]:  # Right arrow key
-            ship.x += PLAYER_SHIP_VELOCITY
-        if keys[pygame.K_UP]:  # Up arrow key
-            ship.y -= PLAYER_SHIP_VELOCITY
-        if keys[pygame.K_DOWN]:  # Down arrow key
-            ship.y += PLAYER_SHIP_VELOCITY
+        # Left arrow key
+        if keys[pygame.K_LEFT] and player_ship.x - PLAYER_SHIP_VELOCITY > 0:
+            player_ship.x -= PLAYER_SHIP_VELOCITY
+        # Right arrow key
+        if keys[pygame.K_RIGHT] and player_ship.x + PLAYER_SHIP_VELOCITY + player_ship.get_width() < DISPLAY_WIDTH:
+            player_ship.x += PLAYER_SHIP_VELOCITY
+        # Up arrow key
+        if keys[pygame.K_UP] and player_ship.y - PLAYER_SHIP_VELOCITY > PLAYER_MAX_Y:
+            player_ship.y -= PLAYER_SHIP_VELOCITY
+        # Down arrow key
+        if keys[pygame.K_DOWN] and player_ship.y + PLAYER_SHIP_VELOCITY + player_ship.get_height() < DISPLAY_HEIGHT:
+            player_ship.y += PLAYER_SHIP_VELOCITY
+
+        # Moving enemy ships
+        for enemy in enemies:
+            enemy.move(enemies_vel)
 
         pygame.display.update()
 
@@ -186,5 +246,6 @@ def game_end():
 
 def game_leaderboards():
     pass
+
 
 game_menu()
