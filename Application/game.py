@@ -8,12 +8,13 @@ pygame.init()
 os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (450, 50)  # Game window position
 
 # System Variables
-game_state = 1
+game_state = 0
 
 # Game Constants
 DISPLAY_WIDTH, DISPLAY_HEIGHT = 600, 750
 FRAMES_PER_SECOND = 75
 MAIN_FONT = pygame.font.SysFont("comicsans", 35)
+MENU_FONT = pygame.font.SysFont("comicsans", 60)
 PLAYER_SHIP_VELOCITY = 5
 PLAYER_MAX_Y = 30  # keeps ship off score and lives text
 
@@ -61,7 +62,7 @@ class Button:
         pygame.draw.rect(win, self.color, (self.x, self.y, self.width, self.height), 0)
         # Draws text
         if self.text != '':
-            font = pygame.font.SysFont('comicsans', 60)
+            font = pygame.font.SysFont('comicsans', 50)
             text = font.render(self.text, 1, (0, 0, 0))
             win.blit(text, (
                 self.x + (self.width // 2 - text.get_width() // 2),
@@ -76,17 +77,44 @@ class Button:
 
 
 class Ship:
+    COOL_DOWN = 30
+
     def __init__(self, x, y, health=100):
         self.x = int(x)
         self.y = int(y)
         self.health = health
         self.ship_img = None
-        self.laser_img = None
+        self .laser_img = None
         self.lasers = []
         self.fire_cool_down = 0
 
+    def cool_down(self):
+        if self.fire_cool_down >= self.COOL_DOWN:
+            self.fire_cool_down = 0
+        elif self.fire_cool_down > 0:
+            self.fire_cool_down += 1
+
+    def shoot(self):
+        if self.fire_cool_down == 0:
+            laser = Laser(self.x, self.y, self.laser_img)
+            self.lasers.append(laser)
+            self.fire_cool_down = 1
+
     def draw(self, window):
         window.blit(self.ship_img, (self.x, self.y))
+        for laser in self.lasers:
+            laser.draw(screen)
+
+    def move_lasers(self, vel, objects):
+        self.cool_down()
+        for laser in self.lasers:
+            laser.move(vel)
+            if laser.off_screen(DISPLAY_HEIGHT):
+                self.lasers.remove(laser)
+            elif laser.collision(objects):
+                objects.health -= 10
+                print("Ship health -10")
+                self.lasers.remove(laser)
 
     def get_width(self):
         return self.ship_img.get_width()
@@ -101,6 +129,20 @@ class Player(Ship):
         self.ship_img = PLAYER_SHIP
         self.laser_img = BLUE_LASER
         self.mask = pygame.mask.from_surface(self.ship_img)  # for accurate collision
+        self.max_health = health
+
+    def move_lasers(self, vel, objects):
+        self.cool_down()
+        for laser in self.lasers:
+            laser.move(vel)
+            if laser.off_screen(DISPLAY_HEIGHT):
+                self.lasers.remove(laser)
+            else:
+                for obj in objects:
+                    if laser.collision(obj):
+                        objects.remove(obj)
+                        self.lasers.remove(laser)
+                        print("Hit Enemy")
 
 
 class Enemy(Ship):
@@ -119,18 +161,58 @@ class Enemy(Ship):
     def move(self, vel):
         self.y += vel
 
+    def shoot(self):
+        if self.fire_cool_down == 0:
+            laser = Laser(self.x - 12, self.y + 55, self.laser_img)
+            self.lasers.append(laser)
+            self.fire_cool_down = 1
 
-# Game menu functions
+
+class Laser:
+    def __init__(self, x , y, img):
+        self.x = x + 33
+        self.y = y - 20
+        self.img = img
+        self.mask = pygame.mask.from_surface(self.img)
+
+    def draw(self, window):
+        window.blit(self.img, (self.x, self.y))
+
+    def move(self, vel):
+        self.y += vel
+
+    def off_screen(self, height):
+        return not (DISPLAY_HEIGHT >= self.y >= 0)
+
+    def collision(self, obj):
+        return collide(obj, self)
+
+# Game functions
+
+
+def collide(obj1, obj2):
+    offset_x = obj2.x - obj1.x
+    offset_y = obj2.y - obj1.y
+    return obj1.mask.overlap(obj2.mask, (offset_x, offset_y)) is not None
 
 
 def game_menu():
+    global game_state
+    game_state = 1
+
     # Buttons
-    play_button = Button(RED, 100, 350, 350, 100, "Play")
-    leaderboards_button = Button(RED, 100, 550, 350, 100, "Leaderboards")
+    play_button = Button(RED, 150, 450, 300, 75, "Play")
+    leaderboards_button = Button(RED, 150, 550, 300, 75, "Leaderboards")
 
     while True:
         # Set background
         screen.blit(BACKGROUND, (0, 0))
+
+        # Draw menu text
+        menu_line_1 = MENU_FONT.render("Space Invaders", 1, WHITE)
+        screen.blit(menu_line_1, (int(DISPLAY_WIDTH/2 - menu_line_1.get_width()/2), 150))
+        menu_line_2 = MAIN_FONT.render("by Hamzah Qasim", 1, WHITE)
+        screen.blit(menu_line_2, (int(DISPLAY_WIDTH/2 - menu_line_2.get_width()/2), 250))
 
         # Buttons draw
         play_button.draw(screen)
@@ -140,6 +222,7 @@ def game_menu():
         click = False
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                game_state = 0
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -158,13 +241,16 @@ def game_menu():
 
 
 def game_active():
+    global game_state
+    game_state = 1
+
     # Game Parameters
     level = 0
     score = 0
-    lives = 3
     enemies = []
     wave_length = 5
     enemies_vel = 1
+    laser_vel = 3
 
     # Game Methods
     def redraw_window():
@@ -174,7 +260,7 @@ def game_active():
     def redraw_score_lives_level():
         # Draws the screen with score and lives
         score_label = MAIN_FONT.render(f"Score: {score}", 1, WHITE)
-        lives_label = MAIN_FONT.render(f"Lives: {lives}", 1, WHITE)
+        lives_label = MAIN_FONT.render(f"Health: {player_ship.health}", 1, WHITE)
         level_label = MAIN_FONT.render(f"Level: {level}", 1, WHITE)
         screen.blit(score_label, ((DISPLAY_WIDTH - score_label.get_width() - 10), 10))
         screen.blit(lives_label, (10, 10))
@@ -182,8 +268,6 @@ def game_active():
 
     # Player Ship
     player_ship = Player((DISPLAY_WIDTH/2) - 30, DISPLAY_HEIGHT - 80)
-
-
 
     # Game Loop
     while True:
@@ -193,6 +277,11 @@ def game_active():
         # Set window
         redraw_window()
         redraw_score_lives_level()
+
+        # Lost condition
+        if player_ship.health <= 0:
+            print(player_ship.health)
+            break
 
         # Spawning enemies
         if len(enemies) == 0:
@@ -211,6 +300,7 @@ def game_active():
         # Window Closing
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                game_state = 0
                 pygame.quit()
                 sys.exit()
 
@@ -228,24 +318,85 @@ def game_active():
         # Down arrow key
         if keys[pygame.K_DOWN] and player_ship.y + PLAYER_SHIP_VELOCITY + player_ship.get_height() < DISPLAY_HEIGHT:
             player_ship.y += PLAYER_SHIP_VELOCITY
+        # Laser Shoot
+        if keys[pygame.K_SPACE]:
+            player_ship.shoot()
 
-        # Moving enemy ships
-        for enemy in enemies:
+        # Moving enemy ships and enemy laser
+        for enemy in enemies[:]:
             enemy.move(enemies_vel)
-
+            enemy.move_lasers(laser_vel, player_ship)
+            # If ship hits the bottom screen, decrement life and remove from list
+            if enemy.y + enemy.get_height() > DISPLAY_HEIGHT:
+                player_ship.health -= 10
+                print("Player health -10")
+                enemies.remove(enemy)
+            # Enemy and player collision
+            if collide(enemy, player_ship):
+                enemies.remove(enemy)
+                player_ship.health -= 10
+                print("Player health -10")
+            elif random.randrange(0, 2 * 60) == 1:  # Enemy shoot random
+                enemy.shoot()
+        # Player ship laser
+        player_ship.move_lasers(-laser_vel, enemies)
+        redraw_score_lives_level()
         pygame.display.update()
+
+    # Game ends when loop ends
+    game_end()
 
 
 def game_paused():
-    pass
+    global game_state
+    game_state = 3
 
 
 def game_end():
-    pass
+    global game_state
+    game_state = 5
+    # Buttons
+    play_button = Button(RED, 150, 450, 300, 75, "Play Again")
+    leaderboards_button = Button(RED, 150, 550, 300, 75, "Leaderboards")
+
+    while True:
+        # Set background
+        screen.blit(BACKGROUND, (0, 0))
+        # Draw menu text
+        menu_line_1 = MENU_FONT.render("Score", 1, WHITE)
+        screen.blit(menu_line_1, (int(DISPLAY_WIDTH/2) - int(menu_line_1.get_width()/2), 150))
+        menu_line_2 = MAIN_FONT.render("To be implemented", 1, WHITE)
+        screen.blit(menu_line_2, (int(DISPLAY_WIDTH/2) - int(menu_line_2.get_width()/2), 250))
+
+        # Buttons draw
+        play_button.draw(screen)
+        leaderboards_button.draw(screen)
+
+        # process events
+        click = False
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                game_state = 0
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if play_button.mouse_over(pygame.mouse.get_pos()):
+                    if event.button == 1:  # ensures left mouse click only
+                        print("Play")
+                        game_active()
+                if leaderboards_button.mouse_over(pygame.mouse.get_pos()):
+                    if event.button == 1:  # ensures left mouse click only
+                        print("Leaderboards")
+
+        # screen refresh/update and performance
+        pygame.display.update()
+        frames_per_second = 45
+        clock.tick(frames_per_second)
 
 
 def game_leaderboards():
-    pass
+    global game_state
+    game_state = 4
 
 
 game_menu()
