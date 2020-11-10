@@ -223,7 +223,7 @@ def game_menu():
                         game_active()  # Plays the game
                 if leaderboards_button.mouse_over(pygame.mouse.get_pos()):
                     if event.button == 1:  # ensures left mouse click only
-                        print("Leaderboards")
+                        game_leaderboards()
 
         # screen refresh/update and performance
         pygame.display.update()
@@ -343,6 +343,7 @@ def game_active():
     game_end(player_ship.score)
 
 
+# Method reads, appends and writes players name and score on JSON file
 def score_append(data, file="score_data.json"):
     # Append score to existing data
     with open(file) as data_file:
@@ -444,7 +445,7 @@ def game_end(score):
                         game_active()  # plays the game
                 if leaderboards_button.mouse_over(pygame.mouse.get_pos()):
                     if event.button == 1:  # ensures left mouse click only
-                        print("Leaderboards")
+                        game_leaderboards()
 
         # screen refresh/update and performance
         pygame.display.update()
@@ -456,6 +457,52 @@ def game_leaderboards():
     global game_state
     game_state = 4
     print(game_state)
+
+    # Reads JSON file for score data
+    with open("score_data.json") as data_file:
+        score_data = json.load(data_file)
+        score_data = score_data["Space Invaders Leaderboards"]
+
+    # Buttons
+    back_button = button.Button(RED, 150, 550, 300, 75, "Back")
+
+    while True:
+        # Set background
+        screen.blit(BACKGROUND, (0, 0))
+        # Draw menu text
+        menu_line_1 = MENU_FONT.render("Leaderbaords", 1, WHITE)
+        screen.blit(menu_line_1, (int(DISPLAY_WIDTH / 2) - int(menu_line_1.get_width() / 2), 50))
+        # Draw score text
+        line_height = 150
+        for score in score_data:
+            for name in score:
+                # blit name
+                score_line_1 = MENU_FONT.render(name, 1, WHITE)
+                screen.blit(score_line_1, (int(DISPLAY_WIDTH * 0.3) - int(score_line_1.get_width() / 2), line_height))
+                # blit score
+                score_line_2 = MENU_FONT.render(str(score[name]), 1, WHITE)
+                screen.blit(score_line_2, (int(DISPLAY_WIDTH * 0.75) - int(score_line_2.get_width() / 2), line_height))
+            line_height += 50
+
+        # Buttons draw
+        back_button.draw(screen)
+
+        # process events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                game_state = 0
+                print(game_state)
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if back_button.mouse_over(pygame.mouse.get_pos()):
+                    if event.button == 1:  # ensures left mouse click only
+                        game_menu()  # plays the game
+
+        # screen refresh/update and performance
+        pygame.display.update()
+        frames_per_second = 45
+        clock.tick(frames_per_second)
 
 
 game_menu()
