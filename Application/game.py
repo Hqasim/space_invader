@@ -2,6 +2,7 @@ import pygame
 import os
 import sys
 import random
+import json
 from Application import button
 
 pygame.font.init()
@@ -327,15 +328,30 @@ def game_active():
             if collide(enemy, player_ship):
                 enemies.remove(enemy)
                 player_ship.set_health_decrement(10)
-            elif random.randrange(0, 4 * 60) == 1:  # Enemy shoot random frequency
+            elif random.randrange(0, 2 * 60) == 1:  # Enemy shoot random frequency
                 enemy.shoot()
         # Player ship laser
         player_ship.move_lasers(-laser_vel, enemies)
         redraw_score_lives_level()
         pygame.display.update()
 
-    # Game ends when loop ends
+    # Extracting score data from player object after game ends
+    score_data = {player_ship.get_player_name(): player_ship.get_score()}
+    # Runs the method to append and write score for the current game
+    score_append(score_data)
+    # Run game end menu method
     game_end(player_ship.score)
+
+
+def score_append(data, file="score_data.json"):
+    # Append score to existing data
+    with open(file) as data_file:
+        existing_data = json.load(data_file)
+        temp_data = existing_data["Space Invaders Leaderboards"]
+        temp_data.append(data)
+    # Write score to file
+    with open(file, "w") as data_file:
+        json.dump(existing_data, data_file, indent=4)
 
 
 def user_name():
