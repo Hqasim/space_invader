@@ -1,9 +1,12 @@
-import pygame
-import os
-import sys
-import random
+# Space Shooter game runner
 import json
-from Application import button
+import os
+import random
+import sys
+
+import pygame
+
+from Application import player, enemy, button
 
 # Initialize font of pygame for later use
 pygame.font.init()
@@ -15,7 +18,7 @@ pygame.init()
 os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (450, 50)
 
 # System Global Variables
-game_state = 0
+game_state = "Application Launched"
 
 # System Global Constants
 DISPLAY_WIDTH, DISPLAY_HEIGHT = 600, 750
@@ -35,182 +38,8 @@ screen = pygame.display.set_mode((DISPLAY_WIDTH, DISPLAY_HEIGHT))
 pygame.display.set_caption("Space Invaders")
 clock = pygame.time.Clock()
 
-# Load Enemies Ship Images
-BLACK_ENEMY = pygame.image.load('../Assets/enemyBlack1.png')
-BLUE_ENEMY = pygame.image.load('../Assets/enemyBlue2.png')
-GREEN_ENEMY = pygame.image.load('../Assets/enemyGreen4.png')
-ORANGE_ENEMY = pygame.image.load('../Assets/enemyRed5.png')
-
-# Load Player Ship Image
-PLAYER_SHIP = pygame.image.load('../Assets/playerShip1_red.png')
-
-# Load Laser Images
-BLUE_LASER = pygame.image.load('../Assets/pixel_laser_blue.png')  # Player laser color
-RED_LASER = pygame.image.load('../Assets/pixel_laser_red.png')  # Enemies laser color
-
 # Load Background Image
 BACKGROUND = pygame.image.load('../Assets/background_black.png')
-
-
-# Game Classes
-class Ship:
-    # Abstract class. Defines general characteristics of ship
-
-    COOL_DOWN = 30  # Fire interval
-
-    # Default constructor. Health set to 100, can be changed while constructing
-    def __init__(self, x, y, health=100):
-        self.x = int(x)
-        self.y = int(y)
-        self.health = health
-        self.ship_img = None
-        self .laser_img = None
-        self.lasers = []
-        self.fire_cool_down = 0
-
-    # Increments the fire_cool_down value until COOL_DOWN value and then resets it to zero.
-    def cool_down(self):
-        if self.fire_cool_down >= self.COOL_DOWN:
-            self.fire_cool_down = 0
-        elif self.fire_cool_down > 0:
-            self.fire_cool_down += 1
-
-    # Shoots the laser only when the fire_cool_down is zero.
-    def shoot(self):
-        if self.fire_cool_down == 0:
-            laser = Laser(self.x, self.y, self.laser_img)
-            self.lasers.append(laser)
-            self.fire_cool_down = 1
-
-    # Draws ships and lasers
-    def draw(self, window):
-        window.blit(self.ship_img, (self.x, self.y))
-        for laser in self.lasers:
-            laser.draw(screen)
-
-    # Laser mechanics
-    def move_lasers(self, vel, objects):
-        self.cool_down()
-        for laser in self.lasers:
-            # Move laser. + vel moves down and -vel moves up
-            laser.move(vel)
-            # Remove laser if it is off screen
-            if laser.off_screen(DISPLAY_HEIGHT):
-                self.lasers.remove(laser)
-            # Remove laser if it collides with an object and decrement its health
-            elif laser.collision(objects):
-                objects.health -= 10
-                self.lasers.remove(laser)
-
-    def get_width(self):
-        return self.ship_img.get_width()
-
-    def get_height(self):
-        return self.ship_img.get_height()
-
-
-class Player(Ship):
-    # This class is a subclass of ship class and inherits from it.
-    # Defines characteristics unique to player ship
-
-    # default constructor, with health, score and player_name as optional parameters
-    def __init__(self, x, y, health=100, score=0, player_name=""):
-        super().__init__(x, y, health)
-        self.ship_img = PLAYER_SHIP
-        self.laser_img = BLUE_LASER
-        self.mask = pygame.mask.from_surface(self.ship_img)  # for accurate collision
-        self.max_health = health
-        self.score = score
-        self.PLAYER_NAME = player_name
-
-    # Overriding parent class move_laser methods
-    def move_lasers(self, vel, objects):
-        self.cool_down()
-        for laser in self.lasers:
-            # Move laser. + vel moves down and -vel moves up
-            laser.move(vel)
-            # Remove laser if it is off screen
-            if laser.off_screen(DISPLAY_HEIGHT):
-                self.lasers.remove(laser)
-            else:  # Remove laser if hit enemy. Increment score by 10
-                for obj in objects:
-                    if laser.collision(obj):
-                        objects.remove(obj)
-                        self.lasers.remove(laser)
-                        self.score += 10
-
-    def get_score(self):
-        return self.score
-
-    def get_health(self):
-        return self.health
-
-    def get_player_name(self):
-        return self.PLAYER_NAME
-
-    def set_health_decrement(self, num):
-        self.health -= num
-
-    def set_player_name(self, player_name):
-        self.PLAYER_NAME = player_name
-
-
-class Enemy(Ship):
-    # This class is a subclass of ship class and inherits from it.
-    # Defines characteristics unique to enemy ship
-
-    # Defines ship color and it's laser combination. For simplicity all enemies are shooting RED_LASER
-    COLOR_MAP = {
-        "black": (BLACK_ENEMY, RED_LASER),
-        "blue": (BLUE_ENEMY, RED_LASER),
-        "green": (GREEN_ENEMY, RED_LASER),
-        "orange": (ORANGE_ENEMY, RED_LASER),
-    }
-
-    # Default constructor
-    def __init__(self, x, y, color, health=100):
-        super().__init__(x, y, health)
-        self.ship_img, self.laser_img = self.COLOR_MAP[color]
-        self.mask = pygame.mask.from_surface(self.ship_img)  # for accurate collision
-
-    # Moves the enemies at a constant velocity downwards in the +y direction
-    def move(self, vel):
-        self.y += vel
-
-    # Overrides the superclass shoot method. Enemy shoots lasers downwards at a fixed interval automatically
-    def shoot(self):
-        if self.fire_cool_down == 0:
-            # Spawn laser at the current enemy ship location
-            laser = Laser(self.x - 12, self.y + 55, self.laser_img)
-            self.lasers.append(laser)
-            self.fire_cool_down = 1
-
-
-class Laser:
-    # Laser class. Used by both enemy ship and player ship
-
-    # Default constructor
-    def __init__(self, x, y, img):
-        self.x = x + 33
-        self.y = y - 20
-        self.img = img
-        self.mask = pygame.mask.from_surface(self.img)
-
-    # Draws the laser on the screen
-    def draw(self, window):
-        window.blit(self.img, (self.x, self.y))
-
-    # Moves the laser
-    def move(self, vel):
-        self.y += vel
-
-    # Computes if laser off the screen
-    def off_screen(self, height):
-        return not (height >= self.y >= 0)
-
-    # Runs the collide function between laser and object. Object can be player or enemy ship
-    def collision(self, obj):
-        return collide(obj, self)
 
 # Game functions
 
@@ -298,7 +127,7 @@ def game_active():
         screen.blit(level_label, (int(DISPLAY_WIDTH / 2) - 50, 10))
 
     # Player Ship
-    player_ship = Player((DISPLAY_WIDTH/2) - 30, DISPLAY_HEIGHT - 80)
+    player_ship = player.Player((DISPLAY_WIDTH/2) - 30, DISPLAY_HEIGHT - 80)
 
     # Get player name and sets it as a ship object variable
     player_ship.set_player_name(user_name())
@@ -321,11 +150,11 @@ def game_active():
             level += 1
             wave_length += 5
             for i in range(wave_length):
-                enemy = Enemy(random.randrange(50, DISPLAY_WIDTH - 100), random.randrange(-1500, -100),
-                              random.choice(["black", "blue", "green", "orange"]))
-                enemies.append(enemy)
-        for enemy in enemies:  # Moving enemies down
-            enemy.draw(screen)
+                enemy_obj = enemy.Enemy(random.randrange(50, DISPLAY_WIDTH - 100), random.randrange(-1500, -100),
+                                        random.choice(["black", "blue", "green", "orange"]))
+                enemies.append(enemy_obj)
+        for enemy_obj in enemies:  # Moving enemies down
+            enemy_obj.draw(screen)
 
         # Draw Player Ship
         player_ship.draw(screen)
@@ -357,19 +186,19 @@ def game_active():
             player_ship.shoot()
 
         # Moving enemy ships and enemy laser
-        for enemy in enemies[:]:
-            enemy.move(enemies_vel)
-            enemy.move_lasers(laser_vel, player_ship)
+        for enemy_obj in enemies[:]:
+            enemy_obj.move(enemies_vel)
+            enemy_obj.move_lasers(laser_vel, player_ship)
             # If ship hits the bottom screen, decrement life and remove from list
-            if enemy.y + enemy.get_height() > DISPLAY_HEIGHT:
+            if enemy_obj.y + enemy_obj.get_height() > DISPLAY_HEIGHT:
                 player_ship.set_health_decrement(10)
-                enemies.remove(enemy)
+                enemies.remove(enemy_obj)
             # Enemy and player collision
-            if collide(enemy, player_ship):
-                enemies.remove(enemy)
+            if collide(enemy_obj, player_ship):
+                enemies.remove(enemy_obj)
                 player_ship.set_health_decrement(10)
             elif random.randrange(0, 2 * 60) == 1:  # Enemy shoot random frequency
-                enemy.shoot()
+                enemy_obj.shoot()
         # Player ship laser movement
         player_ship.move_lasers(-laser_vel, enemies)
 

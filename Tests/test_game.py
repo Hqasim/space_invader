@@ -1,34 +1,25 @@
 # Test suit for game application
 import unittest
+from Application import game
+
+print("tests activated")
 
 
 class TestGame(unittest.TestCase):
+    def setUp(self):
+        print("Setup")
 
-    def test_launch_application(self):
-        self.fail()
+    def tearDown(self):
+        print("Tear down")
 
-    def test_play_game(self):
-        self.fail()
-
-    def test_pause_game(self):
-        self.fail()
-
-    def test_leaderboards(self):
-        self.fail()
-
-    def test_score_screen(self):
-        self.fail()
-
-    def test_game_terminate(self):
-        self.fail()
-
-    def test_ship_move_right(self):
-        self.fail()
-
-    def test_ship_move_left(self):
-        self.fail()
+    def test_application_launched(self):
+        print("Test Player Ship set and get methods")
+        player_ship_test = game.Player(50, 50)
+        player_ship_test.set_player_name("HQ_Test")
+        self.assertEqual(player_ship_test.get_player_name(), "HQ_Test")
 
 
-if __name__ == '__main__':
+
+
+if __name__ == "__main__":
     unittest.main()
-
