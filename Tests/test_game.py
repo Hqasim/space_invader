@@ -1,6 +1,5 @@
 # Test suit for game application
 import unittest
-from Application import game
 
 print("tests activated")
 
@@ -13,12 +12,7 @@ class TestGame(unittest.TestCase):
         print("Tear down")
 
     def test_application_launched(self):
-        print("Test Player Ship set and get methods")
-        player_ship_test = game.Player(50, 50)
-        player_ship_test.set_player_name("HQ_Test")
-        self.assertEqual(player_ship_test.get_player_name(), "HQ_Test")
-
-
+        print("Application launched")
 
 
 if __name__ == "__main__":
