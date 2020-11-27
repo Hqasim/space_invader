@@ -17,9 +17,6 @@ pygame.init()
 # Set game window initial launch position
 os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (450, 50)
 
-# System Global Variables
-game_state = "Application Launched"
-
 # System Global Constants
 DISPLAY_WIDTH, DISPLAY_HEIGHT = 600, 750
 FRAMES_PER_SECOND = 75
@@ -44,6 +41,7 @@ BACKGROUND = pygame.image.load('../Assets/background_black.png')
 # Game functions
 
 
+# Collision detection
 def collide(obj1, obj2):
     # Returns true if obj1 collides with obj2
     offset_x = obj2.x - obj1.x
@@ -51,11 +49,33 @@ def collide(obj1, obj2):
     return obj1.mask.overlap(obj2.mask, (offset_x, offset_y)) is not None
 
 
+# Method appends and writes players name and score on JSON file
+def score_append(data, file="score_data.json"):
+    # Append score to existing data
+    with open(file) as data_file:
+        existing_data = json.load(data_file)
+        temp_data = existing_data["Space Invaders Leaderboards"]
+        temp_data.append(data)
+    # Write score to file
+    with open(file, "w") as data_file:
+        json.dump(existing_data, data_file, indent=4)
+
+
+# Methods reads data from JSON file
+def score_read(file="score_data.json"):
+    with open(file) as data_file:
+        data = json.load(data_file)
+        data = data["Space Invaders Leaderboards"]
+    return data
+
+
+# Game states functions
+
+
 def game_menu():
     # Display main menu GUI
-
-    global game_state
-    game_state = 1  # Used in testing. 1 denotes game menu GUI is active
+    game_state = "Main Menu"
+    print(game_state)
 
     # Buttons
     play_button = button.Button(RED, 150, 450, 300, 75, "Play")
@@ -80,19 +100,19 @@ def game_menu():
         for event in pygame.event.get():
             # Process window close button click
             if event.type == pygame.QUIT:
-                game_state = 0  # Used in testing. Denotes game is closed.
+                print("Application Closed")
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 # Play button clicked
                 if play_button.mouse_over(pygame.mouse.get_pos()):
                     if event.button == 1:  # ensures left mouse click only
-                        game_active()  # Plays the game
+                        # Plays the game
+                        game_active()
                 # Leaderboards button clicked
                 if leaderboards_button.mouse_over(pygame.mouse.get_pos()):
                     if event.button == 1:  # ensures left mouse click only
                         game_leaderboards()
-
         # screen refresh/update and performance
         pygame.display.update()
         frames_per_second = 45
@@ -101,9 +121,6 @@ def game_menu():
 
 def game_active():
     # This methods runs the GUI window in which game is played
-
-    global game_state
-    game_state = 2
 
     # Game Parameters
     level = 0
@@ -131,6 +148,9 @@ def game_active():
 
     # Get player name and sets it as a ship object variable
     player_ship.set_player_name(user_name())
+
+    game_state = "Game Active"
+    print(game_state)
 
     # Game Loop
     while True:
@@ -162,8 +182,6 @@ def game_active():
         # Window Closing event handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                game_state = 0
-                print(game_state)
                 pygame.quit()
                 sys.exit()
 
@@ -213,21 +231,12 @@ def game_active():
     game_end(player_ship.score)
 
 
-# Method reads, appends and writes players name and score on JSON file
-def score_append(data, file="score_data.json"):
-    # Append score to existing data
-    with open(file) as data_file:
-        existing_data = json.load(data_file)
-        temp_data = existing_data["Space Invaders Leaderboards"]
-        temp_data.append(data)
-    # Write score to file
-    with open(file, "w") as data_file:
-        json.dump(existing_data, data_file, indent=4)
-
-
 def user_name():
     # This method creates a window which request username of the user
     # Player name entered by the user is returned when submit button is clicked on GUI window
+
+    game_state = "User Name"
+    print(game_state)
 
     # Buttons
     submit_button = button.Button(RED, 150, 450, 300, 75, "Submit")
@@ -287,19 +296,11 @@ def user_name():
         clock.tick(frames_per_second)
 
 
-def game_paused():
-    # Pauses the game
-    # >>To be implemented<<
-
-    global game_state
-    game_state = 3
-
-
 def game_end(score):
     # This methods shows the game end screen GUI window
 
-    global game_state
-    game_state = 5
+    game_state = "Game End"
+    print(game_state)
 
     # Buttons
     play_button = button.Button(RED, 150, 450, 300, 75, "Play Again")
@@ -310,7 +311,7 @@ def game_end(score):
         # Set background
         screen.blit(BACKGROUND, (0, 0))
 
-        # Draw menu text
+        # Draw menu text and score
         menu_line_1 = MENU_FONT.render("Game Over!", 1, WHITE)
         screen.blit(menu_line_1, (int(DISPLAY_WIDTH/2) - int(menu_line_1.get_width()/2), 150))
         menu_line_2 = MAIN_FONT.render(f"Score: {score}", 1, WHITE)
@@ -323,8 +324,6 @@ def game_end(score):
         # process events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                game_state = 0
-                print(game_state)
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -344,13 +343,11 @@ def game_end(score):
 def game_leaderboards():
     # This methods shows the leaderboards GUI window
 
-    global game_state
-    game_state = 4
+    game_state = "Leaderboards"
+    print(game_state)
 
     # Reads JSON file for score data
-    with open("score_data.json") as data_file:
-        score_data = json.load(data_file)
-        score_data = score_data["Space Invaders Leaderboards"]
+    score_data = score_read()
 
     # Buttons
     back_button = button.Button(RED, 150, 550, 300, 75, "Back")
@@ -383,8 +380,6 @@ def game_leaderboards():
         # process events
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                game_state = 0
-                print(game_state)
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -397,8 +392,3 @@ def game_leaderboards():
         frames_per_second = 45
         clock.tick(frames_per_second)
 
-
-# This is the entry point to the game. game_menu() function is run allowing user to navigate and play the application
-
-
-game_menu()
