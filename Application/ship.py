@@ -21,8 +21,10 @@ class Ship:
     def cool_down(self):
         if self.fire_cool_down >= self.COOL_DOWN:
             self.fire_cool_down = 0
+            return self.fire_cool_down
         elif self.fire_cool_down > 0:
             self.fire_cool_down += 1
+            return self.fire_cool_down
 
     # Shoots the laser only when the fire_cool_down is zero.
     def shoot(self):

@@ -1,10 +1,11 @@
-# Test suit for game application
+# Test game function which read and write to persistence storage
+# Score test file present in Test package named: "score_test_data.json"
 import unittest
 import json
 from Application.game import score_append, score_read
 
 
-class TestGame(unittest.TestCase):
+class TestScore(unittest.TestCase):
     def setUp(self):
         pass
 

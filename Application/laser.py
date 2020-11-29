@@ -18,7 +18,7 @@ class Laser:
     def move(self, vel):
         self.y += vel
 
-    # Computes if laser off the screen
+    # Returns False if laser is off screen
     def off_screen(self, height):
         return not (height >= self.y >= 0)
 
