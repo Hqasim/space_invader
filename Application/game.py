@@ -1,4 +1,7 @@
-# Space Shooter game runner
+"""
+Game class includes the game state methods along with game helper classes. It is responsible for the game mechanics
+
+"""
 import json
 import os
 import random
@@ -41,16 +44,29 @@ BACKGROUND = pygame.image.load('../Assets/background_black.png')
 # Game functions
 
 
-# Collision detection
 def collide(obj1, obj2):
-    # Returns true if obj1 collides with obj2
+    """Collision Detection method computes if two objects collided on screen
+
+    Parameters:
+        obj1 (object): First object for collision comparison
+        obj2 (object): Second object for collision comparison
+
+    Returns:
+            bool: True if obj1 collides with obj 2
+    """
     offset_x = obj2.x - obj1.x
     offset_y = obj2.y - obj1.y
     return obj1.mask.overlap(obj2.mask, (offset_x, offset_y)) is not None
 
 
-# Method appends and writes players name and score on JSON file
 def score_append(data, file="score_data.json"):
+    """Method appends player name and score on JSON persistent storage file
+
+        Parameters:
+            data (dict): data to be appended
+            file (str): name of the file. if file not in same directory as game.py, use full system path instead
+
+    """
     # Append score to existing data
     with open(file) as data_file:
         existing_data = json.load(data_file)
@@ -61,8 +77,15 @@ def score_append(data, file="score_data.json"):
         json.dump(existing_data, data_file, indent=4)
 
 
-# Methods reads data from JSON file
 def score_read(file="score_data.json"):
+    """Method reads data from JSON persistent storage file
+
+        Parameters:
+            file (str): name of the file. if file not in same directory as game.py, use full system path instead
+
+        Returns:
+            data (dict): the data read from the file
+    """
     with open(file) as data_file:
         data = json.load(data_file)
         data = data["Space Invaders Leaderboards"]
@@ -73,9 +96,10 @@ def score_read(file="score_data.json"):
 
 
 def game_menu():
-    # Display main menu GUI
-    game_state = "Main Menu"
-    print(game_state)
+    """Game state function. Responsible for following mechanics: Play button, Leaderboards button and close window.
+    Event listeners listen to events and switch game states accordingly, by calling the appropriate game state methods.
+
+    """
 
     # Buttons
     play_button = button.Button(RED, 150, 450, 300, 75, "Play")
@@ -100,7 +124,6 @@ def game_menu():
         for event in pygame.event.get():
             # Process window close button click
             if event.type == pygame.QUIT:
-                print("Application Closed")
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -120,8 +143,10 @@ def game_menu():
 
 
 def game_active():
-    # This methods runs the GUI window in which game is played
+    """Game state function. Responsible for following mechanics: Spcae Invader game mechanics and window close.
+    Player ship is controlled with arrow keys and laser is shot using space bar. Once game is over, score is displayed.
 
+    """
     # Game Parameters
     level = 0
     enemies = []
@@ -131,11 +156,15 @@ def game_active():
 
     # Game Methods
     def redraw_window():
-        # Draws the screen with the background
+        """Draws the game screen with imported background
+
+        """
         screen.blit(BACKGROUND, (0, 0))
 
     def redraw_score_lives_level():
-        # Draws game text on screen
+        """Draws Score, Health, and Level on screen.
+
+        """
         score_label = MAIN_FONT.render(f"Score: {player_ship.get_score()}", 1, WHITE)
         lives_label = MAIN_FONT.render(f"Health: {player_ship.get_health()}", 1, WHITE)
         level_label = MAIN_FONT.render(f"Level: {level}", 1, WHITE)
@@ -144,13 +173,10 @@ def game_active():
         screen.blit(level_label, (int(DISPLAY_WIDTH / 2) - 50, 10))
 
     # Player Ship
-    player_ship = player.Player((DISPLAY_WIDTH/2) - 30, DISPLAY_HEIGHT - 80)
+    player_ship = player.Player(int((DISPLAY_WIDTH/2) - 30), int(DISPLAY_HEIGHT - 80))
 
     # Get player name and sets it as a ship object variable
     player_ship.set_player_name(user_name())
-
-    game_state = "Game Active"
-    print(game_state)
 
     # Game Loop
     while True:
@@ -232,12 +258,13 @@ def game_active():
 
 
 def user_name():
-    # This method creates a window which request username of the user
-    # Player name entered by the user is returned when submit button is clicked on GUI window
+    """Game state function. Responsible for following mechanics: Enter player name on screen, extract entered player
+    name via submit button and window close. Submit button calls the game_active method to run the game.
 
-    game_state = "User Name"
-    print(game_state)
+    Returns:
+        str: Player name entered by user on screen, is returned when submit button is clicked
 
+    """
     # Buttons
     submit_button = button.Button(RED, 150, 450, 300, 75, "Submit")
 
@@ -297,10 +324,12 @@ def user_name():
 
 
 def game_end(score):
-    # This methods shows the game end screen GUI window
+    """Game state function. Responsible for following mechanics: Play again button, Leaderboards button and close
+    window. This menu also shows the game score for the preceding game run.
+    Event listeners listen to events and switch game states accordingly, by calling the appropriate game state methods.
 
-    game_state = "Game End"
-    print(game_state)
+    """
+    # This methods shows the game end screen GUI window
 
     # Buttons
     play_button = button.Button(RED, 150, 450, 300, 75, "Play Again")
@@ -341,11 +370,11 @@ def game_end(score):
 
 
 def game_leaderboards():
-    # This methods shows the leaderboards GUI window
+    """Game state function. Responsible for following mechanics: Back button and window close button. This game state
+    class game helper functions to read score data from persistent storage and display them on GUI window.
+    Event listeners listen to events and switch game states accordingly, by calling the appropriate game state methods.
 
-    game_state = "Leaderboards"
-    print(game_state)
-
+    """
     # Reads JSON file for score data
     score_data = score_read()
 
@@ -391,4 +420,3 @@ def game_leaderboards():
         pygame.display.update()
         frames_per_second = 45
         clock.tick(frames_per_second)
-

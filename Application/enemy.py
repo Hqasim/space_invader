@@ -1,3 +1,6 @@
+"""
+Enemy class, inherits from ship class. Used to create enemy ships onto the game screen
+"""
 # Enemy ship class
 import pygame
 from Application import ship
@@ -14,8 +17,18 @@ RED_LASER = pygame.image.load('../Assets/pixel_laser_red.png')  # Enemies laser 
 
 
 class Enemy(ship.Ship):
-    # This class is a subclass of ship class and inherits from it.
-    # Defines characteristics unique to enemy ship
+    """Class creates an enemy ship on screen. Inherits characteristic from ship class
+
+    Parameters (constructor):
+        x (int): X coordinate of enemy ship
+
+        y (int): Y coordinate of enemy ship
+
+        color (str): enter color name from the following list ["black", "blue", "green", or "orange"].
+        Defines ship color
+
+        health (int): Default parameter of enemy ship health, always set to 100, if not stated otherwise
+    """
 
     # Defines ship color and it's laser combination. For simplicity all enemies are shooting RED_LASER
     COLOR_MAP = {
@@ -34,12 +47,18 @@ class Enemy(ship.Ship):
         self.mask = pygame.mask.from_surface(self.ship_img)  # for accurate collision
         self.fire_cool_down = 0
 
-    # Moves the enemies at a constant velocity downwards in the +y direction
     def move(self, vel):
+        """Moves the enemies at a constant velocity downwards in the +y direction
+
+        Parameters:
+            vel (int): Move step in pixels of enemy ship movement per frame of game
+        """
         self.y += vel
 
-    # Overrides the superclass shoot method. Enemy shoots lasers downwards at a fixed interval automatically
     def shoot(self):
+        """Makes enemy object shoot laser in downward +y direction. Override of ship shoot method.
+
+        """
         if self.fire_cool_down == 0:
             # Spawn laser at the current enemy ship location
             laser_obj = laser.Laser(self.x - 12, self.y + 55, self.laser_img)

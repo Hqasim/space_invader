@@ -1,4 +1,5 @@
-# Test game classes and their methods for their functionality
+"""Unittest game classes and their methods for their functionality
+"""
 import unittest
 from Application.ship import Ship
 from Application.player import Player
@@ -7,10 +8,11 @@ from Application.laser import Laser
 
 
 class TestGameClasses(unittest.TestCase):
-    # cool_down method of ship class increments the value to fire_cool_down variable by 1 if initial value greater
-    # than zero. If value reaches 30, the variable value is reset to zero
-    # Test checks if ship cool_down method increments fire_cool_down variable by 1
     def test_ship_cool_down_increment(self):
+        """cool_down method of ship class increments the value to fire_cool_down variable by 1 if initial value greater
+        than zero. If value reaches 30, the variable value is reset to zero Test checks if ship cool_down method
+        increments fire_cool_down variable by 1.
+        """
         # Create ship object at (50, 50) screen coordinate
         ship_test = Ship(50, 50)
         # Set ship fire cool down
@@ -22,8 +24,9 @@ class TestGameClasses(unittest.TestCase):
         # Compare values.
         self.assertEqual(2, incremented_cool_down)
 
-    # Test checks id ship cool_down method resets the fire_cool_down variable to 0
     def test_ship_cool_down_reset(self):
+        """Test checks id ship cool_down method resets the fire_cool_down variable to 0
+        """
         # Create ship object at (50, 50) screen coordinate
         ship_test = Ship(50, 50)
         # Set ship fire cool down
@@ -35,10 +38,11 @@ class TestGameClasses(unittest.TestCase):
         # Compare values.
         self.assertEqual(0, reset_cool_down)
 
-    # shoot method of ship class checks if fire_cool_down is zero. Only then it creates a laser object and appends
-    # it to an initially empty lasers list
-    # Test checks if shoot method with zero default fire_cool_down
     def test_player_shoot_zero_cool_down(self):
+        """shoot method of ship class checks if fire_cool_down is zero. Only then it creates a laser object and appends
+        it to an initially empty lasers list.
+        Test checks if shoot method with zero default fire_cool_down
+        """
         # Create player object at (50, 50) screen coordinate
         player_test = Player(50, 50)
         # Run shoot method, which creates a laser object and appends it to initially empty lasers list
@@ -46,8 +50,9 @@ class TestGameClasses(unittest.TestCase):
         # Check if lasers list not empty
         self.assertNotEqual(player_test.lasers, [])
 
-    # Test checks if shoot method with fire_cool_down greater than zero
     def test_player_shoot_not_zero_cool_down(self):
+        """Test checks if shoot method with fire_cool_down greater than zero
+        """
         # Create player object at (50, 50) screen coordinate
         player_test = Player(50, 50)
         # Changes fire_cool_down
@@ -57,8 +62,9 @@ class TestGameClasses(unittest.TestCase):
         # Check if lasers list is empty
         self.assertEqual(player_test.lasers, [])
 
-    # Test checks the move method of enemy class
     def test_enemy_move(self):
+        """Test checks the move method of enemy class
+        """
         # Create enemy object at (50, 50) screen coordinate
         enemy_test = Enemy(50, 50, "black")
         # Move the enemy ship
@@ -67,8 +73,9 @@ class TestGameClasses(unittest.TestCase):
         # Check if enemy has moved
         self.assertEqual(enemy_test.get_y(), 50 + move_step)
 
-    # Test laser move in y direction
     def test_laser_move(self):
+        """Test laser move in y direction
+        """
         # Create player object at (50, 100), mainly to get player laser image for laser object creation
         player_test = Player(50, 100)
         # Create a laser object at (50, 50 screen coordinate)
@@ -80,8 +87,9 @@ class TestGameClasses(unittest.TestCase):
         # Check move distance
         self.assertEqual(laser_test.y, initial_y + move_step)
 
-    # Test if laser is off screen
     def test_laser_off_screen(self):
+        """Test if laser is off screen
+        """
         # Create player object at (50, 100), mainly to get player laser image for laser object creation
         player_test = Player(50, 100)
         # Create a laser object at (50, 50 screen coordinate)

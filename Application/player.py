@@ -1,3 +1,6 @@
+"""
+Player class, inherits from ship class. Used to create player ship onto the game screen
+"""
 from Application import ship
 import pygame
 
@@ -9,10 +12,19 @@ BLUE_LASER = pygame.image.load('../Assets/pixel_laser_blue.png')  # Player laser
 
 
 class Player(ship.Ship):
-    # This class is a subclass of ship class and inherits from it.
-    # Defines characteristics unique to player ship
+    """Class creates a player ship on screen. Inherits characteristic from ship class.
 
-    # default constructor, with health, score and player_name as optional parameters
+    Parameters (constructor):
+        x (int): X coordinate of player ship
+
+        y (int): Y coordinate of player ship
+
+        health (int): Default parameter of enemy ship health, always set to 100, if not stated otherwise
+
+        score (int): Player score with default value of 0
+
+        player_name (str): Player name with a default empty string value
+    """
     def __init__(self, x, y, health=100, score=0, player_name=""):
         super().__init__(x, y, health)
         self.x = int(x)
@@ -26,6 +38,13 @@ class Player(ship.Ship):
 
     # Overriding parent class move_laser methods
     def move_lasers(self, vel, objects):
+        """Method overrides ship class method. Moves player ship lasers in upward -y direction
+
+        Parameters:
+             vel (int): Laser move step velocity
+             objects (object list): Ideally enemy object list would be passed here
+        """
+
         self.cool_down()
         for laser in self.lasers:
             # Move laser. + vel moves down and -vel moves up
@@ -41,16 +60,43 @@ class Player(ship.Ship):
                         self.score += 10
 
     def get_score(self):
+        """Methods returns player score
+
+        Returns:
+            int: Player score
+        """
         return self.score
 
     def get_health(self):
+        """Methods returns player health
+
+        Returns:
+            int: Player health
+        """
         return self.health
 
     def get_player_name(self):
+        """Methods returns player name
+
+        Returns:
+            str: Player name
+        """
         return self.PLAYER_NAME
 
     def set_health_decrement(self, num):
+        """Methods decrements player health
+
+        Parameters:
+            num (int): Number to decrement player health with
+
+        """
         self.health -= num
 
     def set_player_name(self, player_name):
+        """Methods sets player name
+
+        Parameters:
+            player_name (str): Player name as string to be set as object property
+
+        """
         self.PLAYER_NAME = player_name

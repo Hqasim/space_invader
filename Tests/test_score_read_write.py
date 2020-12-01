@@ -1,5 +1,6 @@
-# Test game function which read and write to persistence storage
-# Score test file present in Test package named: "score_test_data.json"
+"""Test game function which read and write to persistence storage.
+Score test file present in Test package named: "score_test_data.json"
+"""
 import unittest
 import json
 from Application.game import score_append, score_read
@@ -10,12 +11,15 @@ class TestScore(unittest.TestCase):
         pass
 
     def tearDown(self):
-        # Resetting score_test_data.json file to default started template contents
+        """Resetting score_test_data.json file to default started template contents
+        """
         test_data_template = {"Space Invaders Leaderboards": []}
         with open("score_test_data.json", "w") as file:
             json.dump(test_data_template, file)
 
-    def test_score_append(self):
+    def test_score_append_read(self):
+        """Test if sample score is appended to sample test file and read accurately
+        """
         # Sample data to be tested
         score_data = {"Test Name 1": 100}
         # Append to score test file
