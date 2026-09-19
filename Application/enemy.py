@@ -5,15 +5,16 @@ Enemy class, inherits from ship class. Used to create enemy ships onto the game 
 import pygame
 from Application import ship
 from Application import laser
+from Application.paths import ASSETS_DIR
 
 # Load Enemies Ship Images
-BLACK_ENEMY = pygame.image.load('../Assets/enemyBlack1.png')
-BLUE_ENEMY = pygame.image.load('../Assets/enemyBlue2.png')
-GREEN_ENEMY = pygame.image.load('../Assets/enemyGreen4.png')
-ORANGE_ENEMY = pygame.image.load('../Assets/enemyRed5.png')
+BLACK_ENEMY = pygame.image.load(str(ASSETS_DIR / "enemyBlack1.png"))
+BLUE_ENEMY = pygame.image.load(str(ASSETS_DIR / "enemyBlue2.png"))
+GREEN_ENEMY = pygame.image.load(str(ASSETS_DIR / "enemyGreen4.png"))
+ORANGE_ENEMY = pygame.image.load(str(ASSETS_DIR / "enemyRed5.png"))
 
 # Load Laser Images
-RED_LASER = pygame.image.load('../Assets/pixel_laser_red.png')  # Enemies laser color
+RED_LASER = pygame.image.load(str(ASSETS_DIR / "pixel_laser_red.png"))  # Enemies laser color
 
 
 class Enemy(ship.Ship):

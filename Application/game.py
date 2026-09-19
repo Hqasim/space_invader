@@ -10,6 +10,7 @@ import sys
 import pygame
 
 from Application import player, enemy, button
+from Application.paths import ASSETS_DIR, SCORE_FILE
 
 # Initialize font of pygame for later use
 pygame.font.init()
@@ -39,7 +40,7 @@ pygame.display.set_caption("Space Invaders")
 clock = pygame.time.Clock()
 
 # Load Background Image
-BACKGROUND = pygame.image.load('../Assets/background_black.png')
+BACKGROUND = pygame.image.load(str(ASSETS_DIR / "background_black.png"))
 
 # Game functions
 
@@ -59,7 +60,7 @@ def collide(obj1, obj2):
     return obj1.mask.overlap(obj2.mask, (offset_x, offset_y)) is not None
 
 
-def score_append(data, file="score_data.json"):
+def score_append(data, file=SCORE_FILE):
     """Method appends player name and score on JSON persistent storage file
 
         Parameters:
@@ -77,7 +78,7 @@ def score_append(data, file="score_data.json"):
         json.dump(existing_data, data_file, indent=4)
 
 
-def score_read(file="score_data.json"):
+def score_read(file=SCORE_FILE):
     """Method reads data from JSON persistent storage file
 
         Parameters:

@@ -2,13 +2,14 @@
 Player class, inherits from ship class. Used to create player ship onto the game screen
 """
 from Application import ship
+from Application.paths import ASSETS_DIR
 import pygame
 
 # Load Player Ship Image
-PLAYER_SHIP = pygame.image.load('../Assets/playerShip1_red.png')
+PLAYER_SHIP = pygame.image.load(str(ASSETS_DIR / "playerShip1_red.png"))
 
 # Load Laser Images
-BLUE_LASER = pygame.image.load('../Assets/pixel_laser_blue.png')  # Player laser color
+BLUE_LASER = pygame.image.load(str(ASSETS_DIR / "pixel_laser_blue.png"))  # Player laser color
 
 
 class Player(ship.Ship):
