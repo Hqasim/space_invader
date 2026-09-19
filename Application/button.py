@@ -35,10 +35,17 @@ class Button:
             win (object): Pygame window object to draw the button on
         """
         pygame.draw.rect(win, self.color, (self.x, self.y, self.width, self.height), 0)
-        # Draws text
+        # Draws text, shrinking the font as needed so longer labels (e.g. "Leaderboards")
+        # never spill outside the button's box.
         if self.text != '':
-            font = pygame.font.SysFont('comicsans', 50)
+            padding = 20
+            font_size = 50
+            font = pygame.font.SysFont('comicsans', font_size)
             text = font.render(self.text, 1, (0, 0, 0))
+            while text.get_width() > self.width - padding and font_size > 10:
+                font_size -= 2
+                font = pygame.font.SysFont('comicsans', font_size)
+                text = font.render(self.text, 1, (0, 0, 0))
             win.blit(text, (
                 self.x + (self.width // 2 - text.get_width() // 2),
                 self.y + (self.height // 2 - text.get_height() // 2)))

@@ -28,6 +28,7 @@ MAIN_FONT = pygame.font.SysFont("comicsans", 35)
 MENU_FONT = pygame.font.SysFont("comicsans", 60)
 PLAYER_SHIP_VELOCITY = 5  # Ship move speed in pixel per frame
 PLAYER_MAX_Y = 30  # Constant denotes how high the ship can travel on screen. Avoids collision with top labels
+MAX_PLAYER_NAME_LENGTH = 8  # Keeps entered names short enough to never overlap the leaderboard score column
 
 # Color definition
 BLACK = (0, 0, 0)
@@ -154,6 +155,9 @@ def game_active():
     wave_length = 5  # Number of enemies per wave
     enemies_vel = 1
     laser_vel = 3
+    # Lasers already fired by enemies. Tracked independently of the `enemies` list so a
+    # projectile keeps flying even after the enemy ship that fired it is destroyed.
+    enemy_lasers = []
 
     # Game Methods
     def redraw_window():
@@ -206,6 +210,11 @@ def game_active():
         # Draw Player Ship
         player_ship.draw(screen)
 
+        # Draw enemy lasers that are still in flight, independent of whether the
+        # enemy that fired them is still alive
+        for enemy_laser in enemy_lasers:
+            enemy_laser.draw(screen)
+
         # Window Closing event handling
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -244,6 +253,20 @@ def game_active():
                 player_ship.set_health_decrement(10)
             elif random.randrange(0, 2 * 60) == 1:  # Enemy shoot random frequency
                 enemy_obj.shoot()
+                # Hand the freshly fired laser off to the independent enemy_lasers pool so it
+                # survives even if this enemy is destroyed before the laser leaves the screen
+                enemy_lasers.extend(enemy_obj.lasers)
+                enemy_obj.lasers = []
+
+        # Move in-flight enemy lasers and check for a hit on the player, off-screen removal
+        for enemy_laser in enemy_lasers[:]:
+            enemy_laser.move(laser_vel)
+            if enemy_laser.off_screen(DISPLAY_HEIGHT):
+                enemy_lasers.remove(enemy_laser)
+            elif enemy_laser.collision(player_ship):
+                player_ship.set_health_decrement(10)
+                enemy_lasers.remove(enemy_laser)
+
         # Player ship laser movement
         player_ship.move_lasers(-laser_vel, enemies)
 
@@ -269,6 +292,10 @@ def user_name():
     # Buttons
     submit_button = button.Button(RED, 150, 450, 300, 75, "Submit")
 
+    # Name input box, styled to match the game's red/black/white theme
+    input_box = pygame.Rect(100, 230, 400, 70)
+    hint_font = pygame.font.SysFont("comicsans", 22)
+
     # Constant to hold player name
     PLAYER_NAME = ""
 
@@ -278,8 +305,26 @@ def user_name():
         screen.blit(BACKGROUND, (0, 0))
 
         # Draw menu text
-        menu_line_1 = MENU_FONT.render("Please enter player name", 1, WHITE)
-        screen.blit(menu_line_1, (int(DISPLAY_WIDTH/2 - menu_line_1.get_width()/2), 150))
+        menu_line_1 = MENU_FONT.render("Enter Player Name", 1, WHITE)
+        screen.blit(menu_line_1, (int(DISPLAY_WIDTH/2 - menu_line_1.get_width()/2), 130))
+
+        # Draw the name input box (black fill, red border to match the buttons)
+        pygame.draw.rect(screen, BLACK, input_box)
+        pygame.draw.rect(screen, RED, input_box, 4)
+
+        # Render the typed name inside the box, with a blinking cursor to show it's active
+        cursor = "|" if pygame.time.get_ticks() % 1000 < 500 else ""
+        name_surface = MAIN_FONT.render(PLAYER_NAME + cursor, 1, WHITE)
+        screen.blit(name_surface, (
+            input_box.x + 15,
+            input_box.y + (input_box.height - name_surface.get_height()) // 2))
+
+        # Hint telling the player how to fill in the box
+        hint_surface = hint_font.render(
+            f"Use your keyboard to type your name (max {MAX_PLAYER_NAME_LENGTH} characters), then click Submit",
+            1, WHITE)
+        screen.blit(hint_surface, (
+            int(DISPLAY_WIDTH/2 - hint_surface.get_width()/2), input_box.bottom + 15))
 
         # Buttons draw
         submit_button.draw(screen)
@@ -302,21 +347,21 @@ def user_name():
                 if len(key) == 1:
                     # For upper case characters
                     if keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
-                        # Appends key (UPPER CASE) to player name constant
-                        PLAYER_NAME += key.upper()
+                        candidate = PLAYER_NAME + key.upper()  # UPPER CASE
                     else:
-                        # Appends key (lower case) to player name constant
-                        PLAYER_NAME += key
+                        candidate = PLAYER_NAME + key  # lower case
+                    # Only accept the character if it stays within the name length cap
+                    # and still fits visually inside the box
+                    if len(candidate) <= MAX_PLAYER_NAME_LENGTH and MAIN_FONT.size(candidate)[0] <= input_box.width - 30:
+                        PLAYER_NAME = candidate
                 # Delete character from player name if backspace is entered on keyboard
                 if key == "backspace":
                     PLAYER_NAME = PLAYER_NAME[:len(PLAYER_NAME) - 1]
                 # Enter space in player name
                 if key == "space":
-                    PLAYER_NAME = PLAYER_NAME + " "
-
-        # Rendering Player Name On Screen as it is typed
-        menu_line_2 = MAIN_FONT.render(PLAYER_NAME, 1, WHITE)
-        screen.blit(menu_line_2, (int(DISPLAY_WIDTH / 2 - menu_line_1.get_width() / 2), 250))
+                    candidate = PLAYER_NAME + " "
+                    if len(candidate) <= MAX_PLAYER_NAME_LENGTH and MAIN_FONT.size(candidate)[0] <= input_box.width - 30:
+                        PLAYER_NAME = candidate
 
         # screen refresh/update and performance
         pygame.display.update()
@@ -391,18 +436,24 @@ def game_leaderboards():
         menu_line_1 = MENU_FONT.render("Leaderbaords", 1, WHITE)
         screen.blit(menu_line_1, (int(DISPLAY_WIDTH / 2) - int(menu_line_1.get_width() / 2), 50))
 
-        # Draw score text
+        # Draw score text in two fixed, left-aligned columns so a long name can never
+        # run into the score column, regardless of how wide it renders
+        name_column_x = int(DISPLAY_WIDTH * 0.1)
+        score_column_x = int(DISPLAY_WIDTH * 0.65)
         line_height = 150  # used to place text on next line
         for score in score_data:
             for name in score:
+                # Defensively cap the displayed name in case older/legacy save data
+                # (from before the name-length cap existed) is longer than allowed
+                display_name = name if len(name) <= MAX_PLAYER_NAME_LENGTH else name[:MAX_PLAYER_NAME_LENGTH - 1] + "…"
                 # Draw name on GUI window
-                score_line_1 = MENU_FONT.render(name, 1, WHITE)
-                screen.blit(score_line_1, (int(DISPLAY_WIDTH * 0.3) - int(score_line_1.get_width() / 2), line_height))
+                score_line_1 = MAIN_FONT.render(display_name, 1, WHITE)
+                screen.blit(score_line_1, (name_column_x, line_height))
                 # Draw score on GUI window
-                score_line_2 = MENU_FONT.render(str(score[name]), 1, WHITE)
-                screen.blit(score_line_2, (int(DISPLAY_WIDTH * 0.75) - int(score_line_2.get_width() / 2), line_height))
+                score_line_2 = MAIN_FONT.render(str(score[name]), 1, WHITE)
+                screen.blit(score_line_2, (score_column_x, line_height))
             # Increment line height to display next score line on a new line
-            line_height += 50
+            line_height += 60
 
         # Buttons draw
         back_button.draw(screen)
